@@ -2,12 +2,21 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const sqlite3 = require('sqlite3').verbose();
 
-// creating in-memory database
-const db = new sqlite3.Database(':memory:');
-db.serialize(() => {
-  db.run('CREATE TABLE created (id INTEGER PRIMARY KEY, staff_pass_id TEXT, team_id TEXT, created_at INTEGER)');
+// creating in-memory database for create data
+const created_db = new sqlite3.Database(':memory:');
+created_db.serialize(() => {
+  created_db.run('CREATE TABLE created (id INTEGER PRIMARY KEY, staff_pass_id TEXT, team_id TEXT, created_at INTEGER)');
 });
+
+// creating in memory database for redeemed data
+const redeemed_db = new sqlite3.Database(':memory:');
+redeemed_db.serialize(() => {
+  redeemed_db.run('CREATE TABLE redeemed (id INTEGER PRIMARY KEY, staff_pass_id TEXT, team_id TEXT, redeemed_at INTEGER)');
+});
+
 var result = [];
+// const staff_pass_id = 'BOSS_6FDFMJGFV6YM';
+const staff_pass_id = 'BOSS_T000000001P';
 
 //parsing the csv file into the database
 fs.createReadStream('staff-id-to-team-mapping.csv')
@@ -20,35 +29,65 @@ fs.createReadStream('staff-id-to-team-mapping.csv')
         id = row[i];
         break;
     }
-    db.run('INSERT INTO created (staff_pass_id, team_id, created_at) VALUES (?, ?, ?)', [id, row.team_name, parseInt(row.created_at)]);
+    created_db.run('INSERT INTO created (staff_pass_id, team_id, created_at) VALUES (?, ?, ?)', [id, row.team_name, parseInt(row.created_at)]);
     result.push(row);
     })
   .on('end', () => {
     console.log('CSV file successfully processed');
-    db.all("SELECT * FROM created", (err, rows) => {
+
+    // accessing the team_id from the created database using the staff_pass_id
+    created_db.all("SELECT team_id FROM created WHERE staff_pass_id = '" + staff_pass_id + "'", (err, row) => {
       if (err) {
         console.error(err.message);
       } else {
-        console.log(rows);
+
+        // accessing all entries with the team_id from the created database
+        created_db.all("SELECT * FROM created WHERE team_id = '" + row[0]['team_id'] + "'", (err, row) => {
+          if (err) {
+            console.error(err.message);
+          } else {
+
+            // inserting the entries into the redeemed database
+            for (i in row) {
+              redeemed_db.run('INSERT INTO redeemed (staff_pass_id, team_id, redeemed_at) VALUES (?, ?, ?)', [row[i].staff_pass_id, row[i].team_id, Math.floor(Date.now())]);
+              created_db.run('DELETE FROM created WHERE id = ' + row[i].id);
+            }
+            redeemed_db.all("SELECT * FROM redeemed", (err, rows) => {
+              if (err) {
+                console.error(err.message);
+              } else {
+                const csvData = rows.map(row => Object.values(row).join(','));
+                fs.writeFile('redeemed.csv', csvData.join('\n'), (err) => {
+                  if (err) {
+                    console.error(err.message);
+                  } else {
+                    console.log('redeem CSV file created/updated successfully');
+                  }
+                });
+              }
+            });
+            
+            //deleting the entries from the created database
+            created_db.all("SELECT * FROM created", (err, rows) => {
+              if (err) {
+                console.error(err.message);
+              } else {
+                const csvData = rows.map(row => Object.values(row).join(','));
+                fs.writeFile('staff-id-to-team-mapping copy.csv', csvData.join('\n'), (err) => {
+                  if (err) {
+                    console.error(err.message);
+                  } else {
+                    console.log('create CSV file updated successfully');
+                  }
+                });
+              }
+            });
+          }
+        });
       }
     });
   })
   .on('error', (error) => {
     console.error('Error:', error);
   });
-
-// db.close();
-
-//querying the database
-
-// db.all("SELECT * FROM created", (err, rows) => {
-//         if (err) {
-//           console.error(err.message);
-//         } else {
-//           console.log(rows);
-//         }
-//     })
-//     .on('error', (error) => {
-//       console.error('Error:', error);
-//   });
 

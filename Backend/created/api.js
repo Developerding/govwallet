@@ -9,7 +9,7 @@ module.exports = class API {
     getTeam(call, callback) {
         const staffId = call.request.getStaffid(); 
         let resp = new messages.getTeamResponse();
-        const query = 'SELECT team_id FROM created WHERE staff_pass_id =' + staffId;
+        const query = 'SELECT team_id FROM created WHERE staff_pass_id = ' + staffId;
         this.db.run(query, (err, rows) => {
             if (err) {
                 return callback({

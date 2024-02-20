@@ -1,1 +1,4 @@
 # govwallet
+
+Assumptions:
+1. 
