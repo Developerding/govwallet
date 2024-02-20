@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package backend;
+
+service backendService {
+    rpc GetTeam (GetTeamRequest) returns (GetTeamResponse) {};
+    rpc GetGift (GetGiftRequest) returns (GetGiftResponse) {};
+}
+
+message Gift {
+    string staffId = 1;
+    string teamId = 2;
+    string createTime = 3;
+}
+
+message GetTeamRequest {
+    string getStaffId = 1;
+}
+
+message GetTeamResponse {
+    string getTeamId = 1;
+}
+
+message GetGiftRequest {
+    string getTeamId = 1;
+    string currTime = 2;
+}
+
+message GetGiftResponse {
+    repeated Gift gift = 1;
+}
