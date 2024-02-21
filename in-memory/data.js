@@ -1,5 +1,6 @@
 const fs = require('fs');
 const csv = require('csv-parser');
+const { exit } = require('process');
 const sqlite3 = require('sqlite3').verbose();
 
 // creating in-memory database for create data
@@ -16,13 +17,12 @@ redeemed_db.serialize(() => {
 
 var result = [];
 // const staff_pass_id = 'BOSS_6FDFMJGFV6YM';
-const staff_pass_id = 'BOSS_T000000001P';
+const staff_pass_id = 'STAFF_H123804820G';
 
 //parsing the csv file into the database
 fs.createReadStream('staff-id-to-team-mapping.csv')
   .pipe(csv())
   .on('data', (row) => {
-
     // accessing the staff_pass_id variable
     var id = '';
     for(i in row){
@@ -39,12 +39,18 @@ fs.createReadStream('staff-id-to-team-mapping.csv')
     created_db.all("SELECT team_id FROM created WHERE staff_pass_id = '" + staff_pass_id + "'", (err, row) => {
       if (err) {
         console.error(err.message);
+        exit(1);
+      }
+      else if (row.length == 0) {
+        console.error('Staff pass ID not found');
+        exit(1);
       } else {
-
+        console.log(row)
         // accessing all entries with the team_id from the created database
         created_db.all("SELECT * FROM created WHERE team_id = '" + row[0]['team_id'] + "'", (err, row) => {
           if (err) {
             console.error(err.message);
+            exit(1);
           } else {
 
             // inserting the entries into the redeemed database
@@ -55,11 +61,13 @@ fs.createReadStream('staff-id-to-team-mapping.csv')
             redeemed_db.all("SELECT * FROM redeemed", (err, rows) => {
               if (err) {
                 console.error(err.message);
+                exit(1);
               } else {
                 const csvData = rows.map(row => Object.values(row).join(','));
                 fs.writeFile('redeemed.csv', csvData.join('\n'), (err) => {
                   if (err) {
                     console.error(err.message);
+                    exit(1);
                   } else {
                     console.log('redeem CSV file created/updated successfully');
                   }
@@ -71,11 +79,15 @@ fs.createReadStream('staff-id-to-team-mapping.csv')
             created_db.all("SELECT * FROM created", (err, rows) => {
               if (err) {
                 console.error(err.message);
+                exit(1);
               } else {
+                const headers = 'id,staff_pass_id,team_id,created_at';
                 const csvData = rows.map(row => Object.values(row).join(','));
+                csvData.unshift(headers);
                 fs.writeFile('staff-id-to-team-mapping copy.csv', csvData.join('\n'), (err) => {
                   if (err) {
                     console.error(err.message);
+                    exit(1);
                   } else {
                     console.log('create CSV file updated successfully');
                   }
@@ -89,5 +101,6 @@ fs.createReadStream('staff-id-to-team-mapping.csv')
   })
   .on('error', (error) => {
     console.error('Error:', error);
+    exit(1);
   });
 

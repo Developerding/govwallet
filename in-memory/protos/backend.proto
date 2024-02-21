@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package create;
+
+service backendService {
+    rpc GetTeam (GetTeamRequest) returns (GetTeamResponse) {};
+    rpc GetGifts (GetGiftsRequest) returns (GetGiftsResponse) {};
+    rpc RedeemGift (RedeemRequest) returns (RedeemResponse) {};
+    rpc CheckHistory (HistoryRequest) returns (HistoryResponse) {};
+    rpc UpdateCreate (UpdateCreateRequest) returns (UpdateCreateResponse) {};
+    rpc UpdateRedeemed (UpdateRedeemedRequest) returns (UpdateRedeemedResponse) {};
+}
+
+message Gift {
+    string staff_pass_id = 1;
+    string team_name = 2;
+    string time = 3;
+}
+
+message GetTeamRequest {
+    string staff_pass_id = 1;
+}
+
+message GetTeamResponse {
+    string GTresp = 1;
+}
+
+message GetGiftsRequest {
+    string team_name = 1;
+}
+
+message GetGiftsResponse {
+    repeated Gift Gift = 1;
+}
+
+message RedeemRequest {
+    repeated Gift Gift = 1;
+}
+
+message RedeemResponse {
+    string Rresp = 1;
+}
+
+message HistoryRequest {
+    string getTeamId = 1;
+}
+
+message HistoryResponse {
+    string Hresp = 1;
+}
+
+message UpdateCreateRequest {
+
+}
+
+message UpdateCreateResponse {
+    string UCresp = 1;
+}
+
+message UpdateRedeemedRequest {
+
+}
+
+message UpdateRedeemedResponse {
+    string URresp = 1;
+}
