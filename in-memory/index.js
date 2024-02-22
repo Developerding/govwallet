@@ -5,6 +5,8 @@ const { exit } = require('process');
 const sqlite3 = require('sqlite3').verbose();
 const grpc = require('@grpc/grpc-js');
 const services = require('./proto/backend_grpc_pb');
+const messages = require('./proto/backend_pb');
+
 function fileExists(filepath) {
     try {
         fs.accessSync(filepath, fs.constants.F_OK);
@@ -14,18 +16,22 @@ function fileExists(filepath) {
         return false;
     }
 }
-function main() {
-    const filepath = './data/redeemed.csv';
-    // creating in-memory database for create data
-    const created_db = new sqlite3.Database(':memory:');
-    created_db.serialize(() => {
-        created_db.run('CREATE TABLE created (id INTEGER PRIMARY KEY, staff_pass_id TEXT, team_name TEXT, created_at INTEGER)');
-    });
-    // creating in memory database for redeemed data
-    const redeemed_db = new sqlite3.Database(':memory:');
-    redeemed_db.serialize(() => {
-        redeemed_db.run('CREATE TABLE redeemed (id INTEGER PRIMARY KEY, staff_pass_id TEXT, team_name TEXT, redeemed_at INTEGER)');
-    });
+
+const created_db = new sqlite3.Database(':memory:');
+created_db.serialize(() => {
+    created_db.run('CREATE TABLE created (id INTEGER PRIMARY KEY, staff_pass_id TEXT, team_name TEXT, created_at TEXT)');
+});
+// creating in memory database for redeemed data
+const redeemed_db = new sqlite3.Database(':memory:');
+redeemed_db.serialize(() => {
+    redeemed_db.run('CREATE TABLE redeemed (id INTEGER PRIMARY KEY, staff_pass_id TEXT, team_name TEXT, redeemed_at TEXT)');
+});
+
+let server = new grpc.Server();
+
+function processCSV() {
+    return new Promise((resolve, reject) => {
+        const filepath = './data/redeemed.csv';
     //parsing the csv file into the database
     fs.createReadStream('./data/staff-id-to-team-mapping.csv')
         .pipe(csv())
@@ -36,13 +42,23 @@ function main() {
             id = row[i];
             break;
         }
-        created_db.run('INSERT INTO created (staff_pass_id, team_name, created_at) VALUES (?, ?, ?)', [id, row.team_name, parseInt(row.created_at)]);
+        created_db.run('INSERT INTO created (staff_pass_id, team_name, created_at) VALUES (?, ?, ?)', [id, row.team_name,row.created_at]);
     })
         .on('end', () => {
         console.log('CSV file successfully processed');
+            created_db.all("SELECT * FROM created", (err, rows) => {
+        if (err) {
+            console.error(err.message);
+            exit(1);
+        }
+        else {
+            console.log(rows);
+        }
+    });
     })
         .on('error', (error) => {
         console.error('Error:', error);
+        reject();
     });
     // reading from the redeemed csv file if it exists
     if (fileExists(filepath)) {
@@ -53,28 +69,180 @@ function main() {
         })
             .on('end', () => {
             console.log('redeemed CSV file successfully processed');
+
         })
             .on('error', (error) => {
             console.error('Error:', error);
         });
+    } else {
+        fs.writeFile(filepath, 'staff_pass_id,team_name,redeemed_at', (err) => {
+            if (err) {
+            console.error(err.message);
+            exit(1);
+            }
+            console.log('redeemed CSV file created successfully');
+        });
     }
-    let api = new API(created_db, redeemed_db, grpc);
-    let server = new grpc.Server();
-    server.addService(services.backendServiceService, {
-        getTeam: api.getCase,
-        getGifts: api.postCase,
-        redeemgift: api.putCase,
-        checkHistory: api.delCase,
-        updateCreate: api.updateCreate,
-        updateRedeemed: api.updateRedeemed
-    });
-    let address = '0.0.0.0:50051';
-    server.bindAsync(address, grpc.ServerCredentials.createInsecure(), () => {
-        server.start();
-        console.log("Server running at " + address);
+});
+}
+function getTeam(call, callback) {
+    const staffId = call.request.getStaffPassId(); 
+        let resp = new messages.GetTeamResponse();
+        const query = "SELECT team_id FROM created WHERE staff_pass_id = '" + staffId + "'";
+        created_db.all(query, (err, rows) => {
+            if (err) {
+                return callback({
+                    code: grpc.status.UNAUTHENTICATED,
+                    message: 'Staff ID not found'
+                });
+            } else {
+                const teamName = rows[0].getTeamName();
+                resp.setGtresp(teamName);
+                callback(null, resp);
+            }
+        });
+    };
+
+function getGifts(call, callback) {
+    const teamName = call.request.getTeamName();
+        let resp = new messages.GetGiftsResponse();
+        const query = "SELECT * FROM created WHERE team_id = '" + teamName + "'";
+        created_db.all(query, (err, rows) => {
+            if (err) {
+                return callback({
+                    code: grpc.status.UNAUTHENTICATED,
+                    message: 'No available gifts for this team'
+                });
+            } else {;
+                for (let i in rows) {
+                    let gift = new messages.Gift();
+                    gift.setStaffPassId(rows[i].getStaffPassId());
+                    gift.setTeamName(rows[i].getTeamName());
+                    gift.setCreatedAt(rows[i].getCreatedAt());
+                    resp.addGifts(gift);
+                }
+                callback(null, resp);
+            }
+        });
+    }
+
+function redeemGift(call, callback) {
+    let resp = new messages.RedeemResponse();
+    const gifts = call.request.getGiftsList();
+    for (let i in gifts) {
+        this.redeemed_db.run('INSERT INTO redeemed (staff_pass_id, team_name, redeemed_at) VALUES (?, ?, ?)', [gifts[i].getStaffPassId(), gifts[i].getTeamName(), Math.floor(Date.now()).toString()]);
+        this.created_db.run("DELETE FROM created WHERE team_name = '" + gifts[i].getTeamName() + "'");
+    }
+        resp.setRresp('Gift redeemed successfully');
+        callback(null, resp);
+};
+
+function checkHistory(call, callback) {
+    const teamName = call.request.getGetteamid();
+    let resp = new messages.HistoryResponse();
+    const query = "SELECT * FROM redeemed WHERE team_name = '" + teamName + "'";
+    redeemed_db.all(query, (err, rows) => {
+        if (err) {
+            return callback({
+                code: grpc.status.UNAUTHENTICATED,
+                message: 'No previous gifts redeemed for this team'
+            });
+        } else {
+            const res = JSON.stringify(rows);
+            resp.setHresp(res);
+            callback(null, resp);
+        }
     });
 }
-main();
+
+function updateCreate(call, callback) {
+    let resp = new messages.UpdateCreateResponse();
+    created_db.all("SELECT * FROM created", (err, rows) => {
+        if (err) {
+            return callback({
+                code: grpc.status.UNAUTHENTICATED,
+                message: 'No data found'
+            });
+        } else {
+          const headers = 'staff_pass_id,team_name,redeemed_at';
+          const csvData = rows.map(row => Object.values(row).slice(1).join(','));
+          csvData.unshift(headers);
+          fs.writeFile('./data/staff-id-to-team-mapping.csv', csvData.join('\n'), (err) => {
+            if (err) {
+              return callback({
+                code: grpc.status.UNAUTHENTICATED,
+                message: 'Error creating CSV file'
+            });
+            } else {
+                const res = JSON.stringify(rows);
+                resp.Ucresp(res);
+                callback(null, resp);
+            }
+          });
+        }
+    });
+}
+
+function updateRedeemed(call, callback) {
+    let resp = new messages.UpdateRedeemedResponse();
+    redeemed_db.all("SELECT * FROM redeemed", (err, rows) => {
+        if (err) {
+            return callback({
+                code: grpc.status.UNAUTHENTICATED,
+                message: 'No data found'
+            });
+        } else {
+          const headers = 'staff_pass_id,team_name,redeemed_at';
+          const csvData = rows.map(row => Object.values(row).slice(1).join(','));
+          csvData.unshift(headers);
+          fs.writeFile('./data/redeemed.csv', csvData.join('\n'), (err) => {
+            if (err) {
+              return callback({
+                code: this.grpc.status.UNAUTHENTICATED,
+                message: 'Error creating CSV file'
+            });
+            } else {
+                const res = JSON.stringify(rows);
+                resp.Urresp(res);
+                callback(null, resp);
+            }
+          });
+        }
+    });
+}
+    
+processCSV().then(() => {
+    redeemed_db.all("SELECT * FROM redeemed", (err, rows) => {
+        if (err) {
+            console.error(err.message);
+            exit(1);
+        }
+        else {
+            console.log(rows);
+        }
+    });
+
+
+
+}).catch(() => {
+    console.error('Error processing CSV file');
+    exit(1);
+})
+
+let address = '0.0.0.0:50051';
+    server.addService(services.backendServiceService, {
+        getTeam: getTeam,
+        getGifts: getGifts,
+        redeemgift: redeemGift,
+        checkHistory: checkHistory,
+        updateCreate: updateCreate,
+        updateRedeemed: updateRedeemed
+    });
+server.bindAsync(address, grpc.ServerCredentials.createInsecure(), () => {
+    server.start();
+    console.log("Server running at " + address);
+});
+
 // // accessing the team_id from the created database using the staff_pass_id
 // created_db.all("SELECT team_name FROM created WHERE staff_pass_id = '" + staff_pass_id + "'", (err: Error, row: [createRecord]) => {
 //   if (err) {

@@ -21,7 +21,17 @@ function main() {
     getGifts.setTeamName("RUST");
     client.getGifts(getGifts, function(err, response) {
         if (err) {
-            console.log(err.message);
+            console.log('here')
+            let checkHistory = new backendMessages.HistoryRequest();
+            checkHistory.setGetteamid("RUST");
+            client.checkHistory(checkHistory, function(err, response) {
+                if (err) {
+                    console.log(err.message);
+                }
+                else {
+                    console.log(response.array[0]);
+                }
+            });
         }
         else if (response.array[0].length > 0) {
             console.log(response.array[0]);
@@ -63,16 +73,7 @@ function main() {
                 }
             });
         } else {
-            let checkHistory = new backendMessages.HistoryRequest();
-            checkHistory.setGetteamid("RUST");
-            client.checkHistory(checkHistory, function(err, response) {
-                if (err) {
-                    console.log(err.message);
-                }
-                else {
-                    console.log(response.array[0]);
-                }
-            });
+
         }
     });
 
