@@ -21,7 +21,6 @@ function main() {
     getGifts.setTeamName("RUST");
     client.getGifts(getGifts, function(err, response) {
         if (err) {
-            console.log('here')
             let checkHistory = new backendMessages.HistoryRequest();
             checkHistory.setGetteamid("RUST");
             client.checkHistory(checkHistory, function(err, response) {

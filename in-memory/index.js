@@ -106,7 +106,7 @@ function getTeam(call, callback) {
 function getGifts(call, callback) {
     const teamName = call.request.getTeamName();
         let resp = new messages.GetGiftsResponse();
-        const query = "SELECT * FROM created WHERE team_id = '" + teamName + "'";
+        const query = "SELECT * FROM created WHERE team_name = '" + teamName + "'";
         created_db.all(query, (err, rows) => {
             if (err) {
                 return callback({
@@ -115,11 +115,12 @@ function getGifts(call, callback) {
                 });
             } else {;
                 for (let i in rows) {
+                    console.log(rows[i]);
                     let gift = new messages.Gift();
-                    gift.setStaffPassId(rows[i].getStaffPassId());
-                    gift.setTeamName(rows[i].getTeamName());
-                    gift.setCreatedAt(rows[i].getCreatedAt());
-                    resp.addGifts(gift);
+                    gift.setStaffPassId(rows[i]['staff_pass_id']);
+                    gift.setTeamName(rows[i]['team_name']);
+                    gift.setTime(rows[i]['created_at']);
+                    resp.addGift(gift);
                 }
                 callback(null, resp);
             }
@@ -128,10 +129,10 @@ function getGifts(call, callback) {
 
 function redeemGift(call, callback) {
     let resp = new messages.RedeemResponse();
-    const gifts = call.request.getGiftsList();
+    const gifts = call.request.getGiftList();
     for (let i in gifts) {
-        this.redeemed_db.run('INSERT INTO redeemed (staff_pass_id, team_name, redeemed_at) VALUES (?, ?, ?)', [gifts[i].getStaffPassId(), gifts[i].getTeamName(), Math.floor(Date.now()).toString()]);
-        this.created_db.run("DELETE FROM created WHERE team_name = '" + gifts[i].getTeamName() + "'");
+        redeemed_db.run('INSERT INTO redeemed (staff_pass_id, team_name, redeemed_at) VALUES (?, ?, ?)', [gifts[i].getStaffPassId(), gifts[i].getTeamName(), Math.floor(Date.now()).toString()]);
+        created_db.run("DELETE FROM created WHERE team_name = '" + gifts[i].getTeamName() + "'");
     }
         resp.setRresp('Gift redeemed successfully');
         callback(null, resp);
@@ -164,7 +165,7 @@ function updateCreate(call, callback) {
                 message: 'No data found'
             });
         } else {
-          const headers = 'staff_pass_id,team_name,redeemed_at';
+          const headers = 'staff_pass_id,team_name,created_at';
           const csvData = rows.map(row => Object.values(row).slice(1).join(','));
           csvData.unshift(headers);
           fs.writeFile('./data/staff-id-to-team-mapping.csv', csvData.join('\n'), (err) => {
@@ -175,7 +176,7 @@ function updateCreate(call, callback) {
             });
             } else {
                 const res = JSON.stringify(rows);
-                resp.Ucresp(res);
+                resp.setUcresp(res);
                 callback(null, resp);
             }
           });
@@ -203,7 +204,7 @@ function updateRedeemed(call, callback) {
             });
             } else {
                 const res = JSON.stringify(rows);
-                resp.Urresp(res);
+                resp.setUrresp(res);
                 callback(null, resp);
             }
           });
@@ -233,7 +234,7 @@ let address = '0.0.0.0:50051';
     server.addService(services.backendServiceService, {
         getTeam: getTeam,
         getGifts: getGifts,
-        redeemgift: redeemGift,
+        redeemGift: redeemGift,
         checkHistory: checkHistory,
         updateCreate: updateCreate,
         updateRedeemed: updateRedeemed
