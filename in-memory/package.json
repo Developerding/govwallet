@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^20.11.19",
+    "cors": "^2.8.5",
     "express": "^4.18.2",
     "grpc-tools": "^1.12.4",
     "ts-protoc-gen": "^0.15.0",
