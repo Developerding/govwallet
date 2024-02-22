@@ -198,7 +198,7 @@ function updateCreate(call, callback) {
           const headers = 'staff_pass_id,team_name,created_at';
           const csvData = rows.map(row => Object.values(row).slice(1).join(','));
           csvData.unshift(headers);
-          fs.writeFile('./data/staff-id-to-team-mapping copy.csv', csvData.join('\n'), (err) => {
+          fs.writeFile('./data/staff-id-to-team-mapping.csv', csvData.join('\n'), (err) => {
             if (err) {
               return callback({
                 code: grpc.status.UNAUTHENTICATED,

@@ -13,6 +13,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+#redeemed {
+  color: #f64716;
+}
+
 a {
   font-weight: 500;
   color: #646cff;

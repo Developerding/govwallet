@@ -51,7 +51,11 @@ app.get("/check/:staffPassId", (req, res) => {
                         res.send(err.message);
                     }
                     else {
-                        res.send(response.array);
+                        let gift = [];
+                        for(i in response.getGiftList()) {
+                            gift.push(response.getGiftList()[i].array);
+                        }
+                        res.send({message: "No new gifts", gifts: gift});
                     }
                 });
             } else {
@@ -91,7 +95,7 @@ app.get("/check/:staffPassId", (req, res) => {
                             }
                             else {
                                 console.log(gifts);
-                                res.send({message: "Gifts redeemed successfully", gifts: JSON.parse(response.array)});
+                                res.send({message: "Gifts redeemed successfully", gifts: gifts});
                             }
                         });
                     } else {

@@ -9,24 +9,28 @@ function App() {
   const [status, setStatus] = useState(0);
   const [errMessage, setErrMessage] = useState('');
   const [time, setTime] = useState('');
+
   function validate(staffPassId: string) {
     axios.get('http://localhost:3000/check/' + staffPassId).then((res) => {
       if(res.data.message === 'Gifts redeemed successfully') {
-        console.log(res.data.gifts);
         setTime(Date.now().toString());
+        setGifts(res.data.gifts);
         setStatus(1);
       } else if(res.data.message === 'No new gifts') {
         setStatus(2);
         setGifts(res.data.gifts);
-        setStaffPassId(res.data.gifts.slice(-1)['staff_pass_id']);
-        setTime(res.data.gifts.slice(-1)['staff_pass_id'])
+        setStaffPassId(res.data.gifts.slice(-1)[0][0]);
+        setTime(res.data.gifts.slice(-1)[0][2]);
       } else {
         setStatus(3);
         setErrMessage(res.data.message);
       }
     });
-  
   }
+
+  let inputTime = new Date(parseInt(time) + 28800000);
+  let timeString = inputTime.toUTCString();
+  timeString = timeString.slice(0, 22) + " SGT"
   
   return (
     <>
@@ -36,29 +40,15 @@ function App() {
         <button onClick={() => validate(staffPassId)}>
           Redeem!
         </button>
-        {/* <ol>
-          {gifts.map((gift, index) => (
-            <li key={index}>{gift}</li>
-          ))}
-        </ol> */}
         {status === 1 && (
           <div>
-            <p>Gifts was redeemed by: {staffPassId} at {time}</p>
-            <ol>
-              {gifts.map((gift, index) => (
-                <li key={index}>{gift}</li>
-              ))}
-            </ol>
+            {gifts.length == 1 ? (<p>1 gift was redeemed by: {staffPassId} at {timeString}</p>) :
+            (<p>{gifts.length} gifts were redeemed by: {staffPassId} at {timeString}</p>)}
           </div>
         )}
         {status === 2 && (
           <div>
-            <p>Gift was last redeemed by: {staffPassId} at {time}</p>
-            <ol>
-              {gifts.map((gift, index) => (
-                <li key={index}>{gift}</li>
-              ))}
-            </ol>
+            <p id='Redeemed'>Gifts for {gifts.slice(-1)[0][1]} was last redeemed by: {staffPassId} at {timeString}</p>
           </div>
         )}
         {status === 3 && (
