@@ -4,7 +4,6 @@ const csv = require('csv-parser');
 const { exit } = require('process');
 const sqlite3 = require('sqlite3').verbose();
 const grpc = require('@grpc/grpc-js');
-const API = require("./api");
 const services = require('./proto/backend_grpc_pb');
 function fileExists(filepath) {
     try {

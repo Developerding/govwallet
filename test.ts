@@ -54,7 +54,7 @@ fs.createReadStream('staff-id-to-team-mapping.csv')
         break;
     }
     created_db.run('INSERT INTO created (staff_pass_id, team_name, created_at) VALUES (?, ?, ?)', [id, row.team_name, parseInt(row.created_at)]);
-    result.push(row);
+    // result.push(row);
     })
   .on('end', () => {
     console.log('CSV file successfully processed');
