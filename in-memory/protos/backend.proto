@@ -46,7 +46,7 @@ message HistoryRequest {
 }
 
 message HistoryResponse {
-    string Hresp = 1;
+    repeated Gift Gift = 1;
 }
 
 message UpdateCreateRequest {

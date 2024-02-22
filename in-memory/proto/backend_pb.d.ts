@@ -176,8 +176,10 @@ export namespace HistoryRequest {
 }
 
 export class HistoryResponse extends jspb.Message {
-  getHresp(): string;
-  setHresp(value: string): void;
+  clearGiftList(): void;
+  getGiftList(): Array<Gift>;
+  setGiftList(value: Array<Gift>): void;
+  addGift(value?: Gift, index?: number): Gift;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): HistoryResponse.AsObject;
@@ -191,7 +193,7 @@ export class HistoryResponse extends jspb.Message {
 
 export namespace HistoryResponse {
   export type AsObject = {
-    hresp: string,
+    giftList: Array<Gift.AsObject>,
   }
 }
 

@@ -88,7 +88,7 @@ function processCSV() {
 function getTeam(call, callback) {
     const staffId = call.request.getStaffPassId(); 
         let resp = new messages.GetTeamResponse();
-        const query = "SELECT team_id FROM created WHERE staff_pass_id = '" + staffId + "'";
+        const query = "SELECT team_name FROM created WHERE staff_pass_id = '" + staffId + "'";
         created_db.all(query, (err, rows) => {
             if (err) {
                 return callback({
@@ -96,7 +96,7 @@ function getTeam(call, callback) {
                     message: 'Staff ID not found'
                 });
             } else {
-                const teamName = rows[0].getTeamName();
+                const teamName = rows[0]['team_name'];
                 resp.setGtresp(teamName);
                 callback(null, resp);
             }
@@ -149,8 +149,14 @@ function checkHistory(call, callback) {
                 message: 'No previous gifts redeemed for this team'
             });
         } else {
-            const res = JSON.stringify(rows);
-            resp.setHresp(res);
+            for (let i in rows) {
+                console.log(rows[i]);
+                let gift = new messages.Gift();
+                gift.setStaffPassId(rows[i]['staff_pass_id']);
+                gift.setTeamName(rows[i]['team_name']);
+                gift.setTime(rows[i]['redeemed_at']);
+                resp.addGift(gift);
+            }
             callback(null, resp);
         }
     });
@@ -168,7 +174,7 @@ function updateCreate(call, callback) {
           const headers = 'staff_pass_id,team_name,created_at';
           const csvData = rows.map(row => Object.values(row).slice(1).join(','));
           csvData.unshift(headers);
-          fs.writeFile('./data/staff-id-to-team-mapping.csv', csvData.join('\n'), (err) => {
+          fs.writeFile('./data/staff-id-to-team-mapping copy.csv', csvData.join('\n'), (err) => {
             if (err) {
               return callback({
                 code: grpc.status.UNAUTHENTICATED,

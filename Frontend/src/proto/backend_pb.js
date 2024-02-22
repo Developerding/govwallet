@@ -213,7 +213,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.create.HistoryResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.create.HistoryResponse.repeatedFields_, null);
 };
 goog.inherits(proto.create.HistoryResponse, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -1468,6 +1468,13 @@ proto.create.HistoryRequest.prototype.setGetteamid = function(value) {
 
 
 
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.create.HistoryResponse.repeatedFields_ = [1];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -1499,7 +1506,8 @@ proto.create.HistoryResponse.prototype.toObject = function(opt_includeInstance) 
  */
 proto.create.HistoryResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    hresp: jspb.Message.getFieldWithDefault(msg, 1, "")
+    giftList: jspb.Message.toObjectList(msg.getGiftList(),
+    proto.create.Gift.toObject, includeInstance)
   };
 
   if (includeInstance) {
@@ -1537,8 +1545,9 @@ proto.create.HistoryResponse.deserializeBinaryFromReader = function(msg, reader)
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setHresp(value);
+      var value = new proto.create.Gift;
+      reader.readMessage(value,proto.create.Gift.deserializeBinaryFromReader);
+      msg.addGift(value);
       break;
     default:
       reader.skipField();
@@ -1569,31 +1578,52 @@ proto.create.HistoryResponse.prototype.serializeBinary = function() {
  */
 proto.create.HistoryResponse.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getHresp();
+  f = message.getGiftList();
   if (f.length > 0) {
-    writer.writeString(
+    writer.writeRepeatedMessage(
       1,
-      f
+      f,
+      proto.create.Gift.serializeBinaryToWriter
     );
   }
 };
 
 
 /**
- * optional string Hresp = 1;
- * @return {string}
+ * repeated Gift Gift = 1;
+ * @return {!Array<!proto.create.Gift>}
  */
-proto.create.HistoryResponse.prototype.getHresp = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+proto.create.HistoryResponse.prototype.getGiftList = function() {
+  return /** @type{!Array<!proto.create.Gift>} */ (
+    jspb.Message.getRepeatedWrapperField(this, proto.create.Gift, 1));
 };
 
 
 /**
- * @param {string} value
+ * @param {!Array<!proto.create.Gift>} value
+ * @return {!proto.create.HistoryResponse} returns this
+*/
+proto.create.HistoryResponse.prototype.setGiftList = function(value) {
+  return jspb.Message.setRepeatedWrapperField(this, 1, value);
+};
+
+
+/**
+ * @param {!proto.create.Gift=} opt_value
+ * @param {number=} opt_index
+ * @return {!proto.create.Gift}
+ */
+proto.create.HistoryResponse.prototype.addGift = function(opt_value, opt_index) {
+  return jspb.Message.addToRepeatedWrapperField(this, 1, opt_value, proto.create.Gift, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
  * @return {!proto.create.HistoryResponse} returns this
  */
-proto.create.HistoryResponse.prototype.setHresp = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
+proto.create.HistoryResponse.prototype.clearGiftList = function() {
+  return this.setGiftList([]);
 };
 
 

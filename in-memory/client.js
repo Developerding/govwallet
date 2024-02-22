@@ -10,17 +10,6 @@ function main() {
     getTeam.setStaffPassId("BOSS_T000000001P");
     client.getTeam(getTeam, function(err, response) {
         if (err) {
-            console.log(err.message);
-        }
-        else {
-            console.log(response.array[0]);
-        }
-    });
-
-    let getGifts = new backendMessages.GetGiftsRequest();
-    getGifts.setTeamName("RUST");
-    client.getGifts(getGifts, function(err, response) {
-        if (err) {
             let checkHistory = new backendMessages.HistoryRequest();
             checkHistory.setGetteamid("RUST");
             client.checkHistory(checkHistory, function(err, response) {
@@ -28,18 +17,38 @@ function main() {
                     console.log(err.message);
                 }
                 else {
-                    console.log(response.array[0]);
+                    console.log(response.array);
                 }
             });
         }
-        else if (response.array[0].length > 0) {
-            console.log(response.array[0]);
+        else {
+            console.log(typeof response.getGtresp());
+        }
+    });
+
+    let getGifts = new backendMessages.GetGiftsRequest();
+    getGifts.setTeamName("RUST");
+    client.getGifts(getGifts, function(err, response) {
+        if (err) {
+            console.log(err.message);
+            let checkHistory = new backendMessages.HistoryRequest();
+            checkHistory.setGetteamid("RUST");
+            client.checkHistory(checkHistory, function(err, response) {
+                if (err) {
+                    console.log(err.message);
+                }
+                else {
+                    console.log(response.getGiftList());
+                }
+            });
+        }
+        else if (response.getGiftList().length > 0) {
             let redeemGift = new backendMessages.RedeemRequest();
-            for(i in response.array[0]) {
+            for(i in response.getGiftList()) {
                 let gift = new backendMessages.Gift();
-                gift.setStaffPassId(response.array[0][i][0]);
-                gift.setTeamName(response.array[0][i][1]);
-                gift.setTime(response.array[0][i][2]);
+                gift.setStaffPassId(response.getGiftList()[i].getStaffPassId());
+                gift.setTeamName(response.getGiftList()[i]);
+                gift.setTime(response.getGiftList()[i][2]);
                 gifts.push(gift);
             }
             redeemGift.setGiftList(gifts);
@@ -48,7 +57,7 @@ function main() {
                     console.log(err.message);
                 }
                 else {
-                    console.log(response.array[0]);
+                    console.log(response.getRresp());
                 }
             });
             
@@ -58,7 +67,7 @@ function main() {
                     console.log(err.message);
                 }
                 else {
-                    console.log(response.array[0]);
+                    console.log(response.getUcresp());
                 }
             });
 
@@ -68,42 +77,12 @@ function main() {
                     console.log(err.message);
                 }
                 else {
-                    console.log(response.array[0]);
+                    console.log(response.getUrresp());
                 }
             });
         } else {
 
         }
     });
-
-    // console.log(gifts);
-
-    // Post function
-
-    // let putReq = new messages.PutCaseRequest();
-    // putReq.setPutid("65a657ce392fe0532914f495");
-    // putReq.setCreatedatetime("2021-04-01T00:00:00.000Z")
-    // putReq.setInstructionList([putReqInfo]);
-
-    // client.putCase(putReq, function(err, response) {
-    //     if (err) {
-    //         console.log(err.message);
-    //     }
-    //     else {
-    //         console.log(JSON.parse(response.array[0]));
-    //     }
-    // });
-
-    // // Delete function
-    // let delReq = new messages.DelCaseRequest();
-    // delReq.setDelid("65a67ddc42d06def5943b48d");
-    // client.delCase(delReq, function(err, response) {
-    //     if (err) {
-    //         console.log(err.message);
-    //     }
-    //     else {
-    //         console.log(response);
-    //     }
-    // });
 }
 main();
