@@ -76,6 +76,7 @@ app.get("/check/:staffPassId", (req, res) => {
                         }
                         redeemGift.setGiftList(gifts);
                         client.redeemGift(redeemGift, function(err, response) {
+                            console.log(gifts);  
                             if (err) {
                                 res.send(err.message);
                             }
