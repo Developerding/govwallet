@@ -5,13 +5,12 @@ const services = require('../proto/backend_grpc_pb');
 const messages = require('../proto/backend_pb');
 const fs = require('fs');
 const csv = require('csv-parser');
-const { exit } = require('process');
-const { app } = require('../client');
 
 
 const firstStaffPassId = 'STAFF_H123804820G';
 const secondStaffPassId = 'MANAGER_T999888420B';
 const thirdStaffPassId = 'BOSS_T000000001P';
+const invalidStaffPassId = 'fake_id';
 
 describe('Success', () => {
   let created_db;
@@ -68,7 +67,6 @@ function getGifts(call, callback) {
                 });
             } else {;
                 for (let i in rows) {
-                    console.log(rows[i]);
                     let gift = new messages.Gift();
                     gift.setStaffPassId(rows[i]['staff_pass_id']);
                     gift.setTeamName(rows[i]['team_name']);
@@ -108,7 +106,6 @@ function checkHistory(call, callback) {
             });
         }else{
             for (let i in rows) {
-                console.log(rows[i]);
                 let gift = new messages.Gift();
                 gift.setStaffPassId(rows[i]['staff_pass_id']);
                 gift.setTeamName(rows[i]['team_name']);
@@ -208,29 +205,6 @@ function updateRedeemed(call, callback) {
 });
 var express = require("express");
 var app = express();
-const cors = require("cors");
-var allowedOrigins = [
-  "http://127.0.0.1:5173",
-  "http://localhost:5173",
-  "*"
-];
-// app.use(
-//   express.json(),
-//   cors({
-//     origin: function (origin, callback) {
-//       // allow requests with no origin
-//       // (like mobile apps or curl requests)
-//       if (!origin) return callback(null, true);
-//       if (allowedOrigins.indexOf(origin) === -1) {
-//         var msg =
-//           "The CORS policy for this site does not " +
-//           "allow access from the specified Origin.";
-//         return callback(new Error(msg), false);
-//       }
-//       return callback(null, true);
-//     },
-//   })
-// );
 
 app.get("/check/:staffPassId", (req, res) => {
     const client = new services.backendServiceClient('localhost:50051', grpc.credentials.createInsecure());
@@ -295,7 +269,6 @@ app.get("/check/:staffPassId", (req, res) => {
                                 res.send(err.message);
                             }
                             else {
-                                console.log(gifts);
                                 res.send({message: "Gifts redeemed successfully", gifts: gifts});
                             }
                         });
@@ -308,9 +281,10 @@ app.get("/check/:staffPassId", (req, res) => {
     });
 });
 
-expressApp = app.listen(3001, () => {
-    console.log("Server running on port 3001");
+expressApp = app.listen(3000, () => {
+    console.log("Server running on port 3000");
 });
+// expressApp.close();
   });
 
   afterEach((done) => {
@@ -321,7 +295,6 @@ expressApp = app.listen(3001, () => {
       
       var csvData = Object.values(row).join(','); // 'row' represents a single row
       headers = headers + '\n' + csvData;
-      console.log(headers);
       fs.writeFile('./data/staff-id-to-team-mapping.csv', headers, (err) => {
         if (err) {
           console.error(err.message);
@@ -367,29 +340,32 @@ expressApp = app.listen(3001, () => {
   // Define gRPC service methods and server setup here
 
   test('Able to redeem gifts', async () => {
-    const response = await axios.get('http://localhost:3001/check/' + firstStaffPassId);
+    const response = await axios.get('http://localhost:3000/check/' + firstStaffPassId);
     expect(response.data.message).toBe('Gifts redeemed successfully');
     expect(response.data.gifts.length).toBe(1);
   });
 
   test('Able to redeem gifts by 2nd team', async () => {
-    const response = await axios.get('http://localhost:3001/check/' + secondStaffPassId);
+    const response = await axios.get('http://localhost:3000/check/' + secondStaffPassId);
     expect(response.data.message).toBe('Gifts redeemed successfully');
     expect(response.data.gifts.length).toBe(2);
   });
 
   test('No new gifts', async () => {
     // Make the first request
-    const response1 = await axios.get('http://localhost:3001/check/' + secondStaffPassId);
+    const response1 = await axios.get('http://localhost:3000/check/' + secondStaffPassId);
     // Verify the response of the first request
     expect(response1.data.message).toBe('Gifts redeemed successfully');
     expect(response1.data.gifts.length).toBe(2);
   
     // Make the second request
-    const response2 = await axios.get('http://localhost:3001/check/' + thirdStaffPassId);
+    const response2 = await axios.get('http://localhost:3000/check/' + thirdStaffPassId);
     // Verify the response of the second request
     expect(response2.data.message).toBe('No new gifts');
-    expect(response2.data.gifts.length).toBe(0);
+  });
+  test('No such user', async () => {
+    const response = await axios.get('http://localhost:3000/check/' + invalidStaffPassId);
+    expect(response.data).toBe('16 UNAUTHENTICATED: Staff ID not found');
   });
 });
 
@@ -429,7 +405,6 @@ function processCSV(created_db, redeemed_db) {
             reject();
         }
         else {
-            // console.log(rows);
             resolve();
         }
     });
@@ -465,8 +440,3 @@ function processCSV(created_db, redeemed_db) {
     }
 });
 }
-
-
-var handler = function(server) {
-    server.close();
-  };

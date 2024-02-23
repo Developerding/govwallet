@@ -39,7 +39,7 @@ app.get("/check/:staffPassId", (req, res) => {
     getTeam.setStaffPassId(req.params.staffPassId);
     client.getTeam(getTeam, function(err, response) {
         if (err) {
-            res.send(err.message);
+            res.send({message: 'Staff pass id not found'});
         }
         else {
             let checkHistory = new backendMessages.HistoryRequest();
