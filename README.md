@@ -19,3 +19,9 @@ Assumptions:
 a.	Everyone in every team receives at least one gift so their unique IDs are all in the create dataset
 6.	For function 2, since we are supposed to check against redemption data and filter based on the team, then the staff member collecting gifts will collect all available gifts for his/her team that have been posted in the create dataset that is before the time of collection
 a.  A secondary assumption since there are rows with the same timing, that two identical rows can be created also
+
+Tech stack used:
+1. grpc
+2. sqlite in-memory database
+3. express
+4. React typescript
